@@ -10,12 +10,18 @@ interface ChallengeCardProps {
 const STATUS_STYLES = {
   DRAFT: 'bg-slate-700/50 text-slate-300 border-slate-600/50',
   SUBMITTED: 'bg-green-500/10 text-green-400 border-green-500/30',
+  MATCHING: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  MATCHED: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  DISTRIBUTED: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
   WITHDRAWN: 'bg-red-500/10 text-red-400 border-red-500/30',
 };
 
 const STATUS_LABELS = {
   DRAFT: 'Draft',
   SUBMITTED: 'Submitted',
+  MATCHING: 'AI Matching',
+  MATCHED: 'Matched',
+  DISTRIBUTED: 'In Research',
   WITHDRAWN: 'Withdrawn',
 };
 
@@ -35,12 +41,22 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
             <span className="text-blue-400 text-xs font-mono font-bold bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
               {challenge.challengeCode}
             </span>
-            <span className={`text-xs font-medium border px-2 py-0.5 rounded-full ${STATUS_STYLES[challenge.status]}`}>
-              {STATUS_LABELS[challenge.status]}
+            <span className={`text-xs font-medium border px-2 py-0.5 rounded-full ${(STATUS_STYLES as any)[challenge.status]}`}>
+              {(STATUS_LABELS as any)[challenge.status]}
             </span>
             {challenge.status === 'SUBMITTED' && (
               <span className="text-xs text-blue-300/60 bg-blue-500/5 border border-blue-500/20 px-2 py-0.5 rounded-full">
-                🎓 Universities: matching soon
+                🎓 Awaiting university matching
+              </span>
+            )}
+            {(challenge.status === 'MATCHING' || challenge.status === 'MATCHED') && (
+              <span className="text-xs text-blue-300/60 bg-blue-500/5 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                🎓 Universities matched
+              </span>
+            )}
+            {challenge.status === 'DISTRIBUTED' && (
+              <span className="text-xs text-blue-300/60 bg-blue-500/5 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                🔬 Research in progress
               </span>
             )}
           </div>

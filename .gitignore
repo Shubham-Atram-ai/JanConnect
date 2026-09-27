@@ -1,11 +1,47 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node
 node_modules/
 dist/
 build/
-.env
-.env.local
-.DS_Store
 coverage/
-logs/
-*.log
+.npm
+*.tsbuildinfo
 
-/generated/prisma
+# Prisma
+/generated/prisma/
+*.db
+*.sqlite
+*.sqlite3
+
+# Playwright / Testing
+playwright-report/
+test-results/
+tests/test-results/
+tests/playwright-report/
+screenshots/
+videos/
+traces/
+
+# Uploads
+uploads/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
+.windsurf/
+.claude/
+.agents/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

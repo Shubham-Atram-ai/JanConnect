@@ -388,6 +388,51 @@ export class ChallengesService {
     return challenge;
   }
 
+  async getSolutionsForChallenge(id: string, citizenId: string) {
+    const challenge = await this.assertOwner(id, citizenId);
+    return this.prisma.solution.findMany({
+      where: {
+        workspace: { assignment: { challengeId: challenge.id } },
+        status: 'SUBMITTED',
+      },
+      include: {
+        workspace: {
+          include: {
+            assignment: { include: { university: { include: { organization: true } } } },
+          },
+        },
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  async getSolutionById(solutionId: string, citizenId: string) {
+    const solution = await this.prisma.solution.findUnique({
+      where: { id: solutionId },
+      include: {
+        workspace: {
+          include: {
+            assignment: { include: { challenge: true, university: { include: { organization: true } } } },
+            team: { include: { members: { include: { user: true } } } },
+            findings: { where: { status: 'CONFIRMED' } },
+            evidence: true,
+            references: true,
+          },
+        },
+      },
+    });
+
+    if (!solution || solution.workspace.assignment.challenge.citizenId !== citizenId) {
+      throw new NotFoundException('Solution not found');
+    }
+    
+    if (solution.status !== 'SUBMITTED') {
+      throw new ForbiddenException('Solution is not submitted yet');
+    }
+
+    return solution;
+  }
+
   private validateFile(file: Express.Multer.File, type: MediaType): void {
     const allowedMimes = ALLOWED_MIME[type];
     if (!allowedMimes.includes(file.mimetype)) {

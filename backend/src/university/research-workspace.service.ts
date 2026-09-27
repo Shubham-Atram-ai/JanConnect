@@ -43,6 +43,7 @@ export class ResearchWorkspaceService {
         references: true,
         findings: true,
         discussions: true,
+        solution: true,
       },
     });
 

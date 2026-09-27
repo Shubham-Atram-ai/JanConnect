@@ -5,7 +5,7 @@ import { ArrowLeft, Plus, Filter } from 'lucide-react';
 import challengeService from '../../services/challengeService';
 import ChallengeCard from '../../components/ChallengeCard';
 
-type Filter = 'all' | 'DRAFT' | 'SUBMITTED';
+type Filter = 'all' | 'DRAFT' | 'SUBMITTED' | 'MATCHING' | 'MATCHED' | 'DISTRIBUTED';
 
 export default function MyProblems() {
   const navigate = useNavigate();

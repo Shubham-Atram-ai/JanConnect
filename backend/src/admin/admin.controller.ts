@@ -65,4 +65,45 @@ export class AdminController {
   ) {
     return this.matching.distributeAssignments(id, dto.universityIds, req.user!.id);
   }
+
+  @Get('solutions')
+  @Roles('PLATFORM_ADMIN')
+  async getSolutions() {
+    return this.prisma.solution.findMany({
+      where: { status: 'SUBMITTED' },
+      include: {
+        workspace: {
+          include: {
+            assignment: {
+              include: {
+                challenge: true,
+                university: { include: { organization: true } },
+              }
+            }
+          }
+        }
+      },
+      orderBy: { submittedAt: 'desc' },
+    });
+  }
+
+  @Get('solutions/:id')
+  @Roles('PLATFORM_ADMIN')
+  async getSolutionDetail(@Param('id') id: string) {
+    return this.prisma.solution.findUnique({
+      where: { id, status: 'SUBMITTED' },
+      include: {
+        workspace: {
+          include: {
+            assignment: { include: { challenge: true, university: { include: { organization: true } } } },
+            team: { include: { members: { include: { user: true } } } },
+            findings: { where: { status: 'CONFIRMED' } },
+            evidence: true,
+            references: true,
+          },
+        },
+      },
+    });
+  }
 }
+

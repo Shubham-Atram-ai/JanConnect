@@ -4,7 +4,7 @@ export interface Challenge {
   id: string;
   challengeCode: string;
   citizenId: string;
-  status: 'DRAFT' | 'SUBMITTED' | 'WITHDRAWN';
+  status: 'DRAFT' | 'SUBMITTED' | 'MATCHING' | 'MATCHED' | 'DISTRIBUTED' | 'WITHDRAWN';
   title?: string;
   summary?: string;
   domain?: string;
@@ -128,6 +128,12 @@ const challengeService = {
 
   submit: (id: string): Promise<SubmitResult> =>
     api.post(`/challenges/${id}/submit`).then((r) => r.data),
+
+  getSolutions: (id: string): Promise<any[]> =>
+    api.get(`/challenges/${id}/solutions`).then((r) => r.data),
+
+  getSolution: (solutionId: string): Promise<any> =>
+    api.get(`/solutions/${solutionId}`).then((r) => r.data),
 };
 
 export default challengeService;

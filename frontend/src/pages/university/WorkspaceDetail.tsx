@@ -259,6 +259,15 @@ export default function WorkspaceDetail() {
             Mark Ready for Solution
           </button>
         )}
+        {isReady && (
+          <Link
+            to={`/university/workspaces/${id}/solution`}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl flex items-center gap-2 shadow-sm transition-colors"
+          >
+            <CheckCircle className="w-4 h-4" />
+            {ws.solution ? (ws.solution.status === 'SUBMITTED' ? 'View Submitted Solution' : 'Continue Solution Draft') : 'Create Solution'}
+          </Link>
+        )}
       </div>
 
       {/* Main Workspace Card */}

@@ -118,4 +118,23 @@ export class ChallengesController {
   submit(@Param('id') id: string, @Request() req: AuthRequest) {
     return this.svc.submit(id, req.user.id);
   }
+
+  // GET /api/v1/challenges/:id/solutions
+  @Get(':id/solutions')
+  getSolutions(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.svc.getSolutionsForChallenge(id, req.user.id);
+  }
 }
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.CITIZEN)
+@Controller('solutions')
+export class CitizenSolutionsController {
+  constructor(private readonly svc: ChallengesService) {}
+
+  @Get(':id')
+  getSolutionById(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.svc.getSolutionById(id, req.user.id);
+  }
+}
+

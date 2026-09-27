@@ -325,7 +325,7 @@ export default function NewProblem() {
             <div className="text-center space-y-2">
               <h3 className="text-white font-bold text-xl">AI is analyzing your problem…</h3>
               <p className="text-slate-400 text-sm">This takes a few seconds</p>
-              <p className="text-slate-600 text-xs">Mock AI provider active (development mode)</p>
+
             </div>
           </div>
         )}
@@ -402,7 +402,7 @@ export default function NewProblem() {
                 {isProcessing ? 'Submitting…' : 'Submit Problem'}
               </button>
               <p className="text-slate-500 text-xs text-center">
-                After submission, AI will match your problem with up to 5 universities (coming in the next phase)
+                After submission, AI will match your problem with up to 5 specialized universities
               </p>
             </div>
           </div>

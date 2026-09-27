@@ -45,7 +45,7 @@ export default function CitizenDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate('/citizen/notifications')}
+              onClick={() => document.getElementById('notifications-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="relative p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
               aria-label="Notifications"
             >
@@ -150,7 +150,7 @@ export default function CitizenDashboard() {
 
         {/* Notifications preview */}
         {notifications.filter((n) => n.status === 'UNREAD').length > 0 && (
-          <div className="space-y-3">
+          <div id="notifications-section" className="space-y-3">
             <h2 className="text-white font-semibold">Recent Notifications</h2>
             <div className="space-y-2">
               {notifications.filter((n) => n.status === 'UNREAD').slice(0, 3).map((n) => (

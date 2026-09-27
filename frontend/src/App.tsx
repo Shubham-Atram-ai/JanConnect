@@ -13,6 +13,10 @@ import UniversityAssignments from './pages/university/UniversityAssignments';
 import AssignmentDetail from './pages/university/AssignmentDetail';
 import UniversityWorkspaces from './pages/university/UniversityWorkspaces';
 import WorkspaceDetail from './pages/university/WorkspaceDetail';
+import UniversitySolutionEditor from './pages/university/UniversitySolutionEditor';
+import CitizenSolutionDetail from './pages/citizen/CitizenSolutionDetail';
+import AdminSolutions from './pages/admin/AdminSolutions';
+import AdminSolutionDetail from './pages/admin/AdminSolutionDetail';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -105,6 +109,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/citizen/solutions/:id"
+            element={
+              <ProtectedRoute allowedRoles={['CITIZEN']}>
+                <CitizenSolutionDetail />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin routes */}
           <Route
@@ -120,6 +132,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
                 <AdminChallengeDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/solutions"
+            element={
+              <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+                <AdminSolutions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/solutions/:id"
+            element={
+              <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+                <AdminSolutionDetail />
               </ProtectedRoute>
             }
           />
@@ -154,6 +182,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['UNIVERSITY_ADMIN', 'FACULTY', 'STUDENT', 'RESEARCHER', 'PLATFORM_ADMIN']}>
                 <WorkspaceDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/university/workspaces/:id/solution"
+            element={
+              <ProtectedRoute allowedRoles={['UNIVERSITY_ADMIN', 'FACULTY', 'STUDENT', 'RESEARCHER', 'PLATFORM_ADMIN']}>
+                <UniversitySolutionEditor />
               </ProtectedRoute>
             }
           />

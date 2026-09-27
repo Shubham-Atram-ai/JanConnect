@@ -10,6 +10,9 @@ import ChallengeTimeline from '../../components/ChallengeTimeline';
 const STATUS_STYLES = {
   DRAFT: 'bg-slate-700/50 text-slate-300 border-slate-600/50',
   SUBMITTED: 'bg-green-500/10 text-green-400 border-green-500/30',
+  MATCHING: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  MATCHED: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  DISTRIBUTED: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
   WITHDRAWN: 'bg-red-500/10 text-red-400 border-red-500/30',
 };
 
@@ -21,6 +24,12 @@ export default function ProblemDetail() {
     queryKey: ['challenge', id],
     queryFn: () => challengeService.get(id!),
     enabled: !!id,
+  });
+
+  const { data: solutions } = useQuery({
+    queryKey: ['challenge-solutions', id],
+    queryFn: () => challengeService.getSolutions(id!),
+    enabled: !!id && challenge?.status !== 'DRAFT',
   });
 
   if (isLoading) {
@@ -60,7 +69,7 @@ export default function ProblemDetail() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-blue-400 text-sm font-mono font-bold">{challenge.challengeCode}</span>
-              <span className={`text-xs border px-2 py-0.5 rounded-full ${STATUS_STYLES[challenge.status]}`}>
+              <span className={`text-xs border px-2 py-0.5 rounded-full ${(STATUS_STYLES as any)[challenge.status]}`}>
                 {challenge.status}
               </span>
             </div>
@@ -173,13 +182,39 @@ export default function ProblemDetail() {
         )}
 
         {/* University Matching Note */}
-        {challenge.status === 'SUBMITTED' && (
+        {challenge.status === 'SUBMITTED' && solutions?.length === 0 && (
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
             <p className="text-blue-300 text-sm font-medium">🎓 AI University Matching</p>
             <p className="text-blue-300/60 text-xs mt-1">
-              Your problem will be matched with up to 5 universities in the next phase.
-              This feature is coming soon.
+              Your problem is being matched with specialized universities across the state.
+              You will be notified when solutions are proposed.
             </p>
+          </div>
+        )}
+
+        {/* Solutions Section */}
+        {solutions && solutions.length > 0 && (
+          <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-4 space-y-3">
+            <h3 className="text-emerald-400 text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
+              <Bot className="w-4 h-4" /> Proposed Solutions ({solutions.length})
+            </h3>
+            <div className="space-y-3">
+              {solutions.map((sol: any) => (
+                <div key={sol.id} className="bg-slate-700/20 border border-slate-600/30 p-4 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-white font-medium">{sol.title}</h4>
+                    <p className="text-slate-400 text-xs mt-1">By {sol.workspace?.assignment?.university?.organization?.name || 'University'}</p>
+                    <p className="text-slate-500 text-xs mt-1">Submitted on {new Date(sol.submittedAt).toLocaleDateString()}</p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/citizen/solutions/${sol.id}`)}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    View Solution
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

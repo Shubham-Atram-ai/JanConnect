@@ -356,6 +356,7 @@ model UniversityAssignment {
   @@index([status])
 
   workspace ResearchWorkspace?
+  solution  Solution?
 }
 
 // ─── Phase 4 Collaborative Research Workspace ─────────────────────────────────
@@ -424,6 +425,7 @@ model ResearchWorkspace {
   references  ResearchReference[]
   findings    ResearchFinding[]
   discussions ResearchDiscussion[]
+  solution    Solution?
 }
 
 model ResearchTeam {
@@ -558,5 +560,42 @@ model ResearchDiscussion {
   createdAt DateTime @default(now())
 
   @@index([workspaceId])
+}
+
+// ─── Phase 5 Formal Solution ──────────────────────────────────────────────────
+
+enum SolutionStatus {
+  DRAFT
+  SUBMITTED
+}
+
+model Solution {
+  id                 String               @id @default(uuid())
+  assignmentId       String               @unique
+  assignment         UniversityAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  workspaceId        String               @unique
+  workspace          ResearchWorkspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  title              String
+  summary            String               @db.Text
+  problemStatement   String               @db.Text
+  proposedApproach   String               @db.Text
+  methodology        String               @db.Text
+  implementationPlan String               @db.Text
+  requiredResources  String               @db.Text
+  expectedOutcome    String               @db.Text
+  expectedImpact     String               @db.Text
+  limitations        String               @db.Text
+  futureWork         String               @db.Text
+  
+  status             SolutionStatus       @default(DRAFT)
+  submittedAt        DateTime?
+  
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([assignmentId])
+  @@index([workspaceId])
+  @@index([status])
 }
 
