@@ -1,0 +1,562 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+enum Role {
+  CITIZEN
+  GOVERNMENT_ADMIN
+  UNIVERSITY_ADMIN
+  FACULTY
+  RESEARCHER
+  STUDENT
+  INDUSTRY_PARTNER
+  PLATFORM_ADMIN
+  DOMAIN_EXPERT
+}
+
+enum ChallengeStatus {
+  DRAFT
+  SUBMITTED
+  MATCHING
+  MATCHED
+  DISTRIBUTED
+  WITHDRAWN
+}
+
+enum AssignmentStatus {
+  RECOMMENDED
+  SENT
+  VIEWED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+model User {
+  id                String        @id @default(uuid())
+  email             String        @unique
+  passwordHash      String
+  role              Role
+  preferredLanguage String        @default("en")
+  organizationId    String?
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  refreshTokens       RefreshToken[]
+  challenges          Challenge[]
+  notifications       Notification[]
+  auditLogs           ChallengeAuditLog[]
+  researchTeamMembers ResearchTeamMember[]
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  type      String // e.g. "GOVERNMENT", "UNIVERSITY", "INDUSTRY"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+
+  university University?
+  industry   IndustryPartner?
+}
+
+model University {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  description String? @db.Text
+  website     String?
+  state       String?
+  district    String?
+  city        String?
+  latitude    Float?
+  longitude   Float?
+
+  strengthDomains   String[] @default([])
+  specializations   String[] @default([])
+  capacity          Int      @default(0)
+  activeAssignments Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departments UniversityDept[]
+  faculties   Faculty[]
+  facilities  Facility[]
+  projects    UniversityProject[]
+  assignments UniversityAssignment[]
+}
+
+model UniversityDept {
+  id           String     @id @default(uuid())
+  name         String
+  universityId String
+  university   University @relation(fields: [universityId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model IndustryPartner {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ─── Challenge Domain ─────────────────────────────────────────────────────────
+
+model Challenge {
+  id String @id @default(uuid())
+
+  /// Human-readable code e.g. JC-0001
+  challengeCode String @unique @default("")
+
+  citizenId String
+  citizen   User   @relation(fields: [citizenId], references: [id])
+
+  // Input
+  originalLanguage   String?
+  originalAudioRef   String? // storage key for audio file
+  originalTranscript String? @db.Text
+  normalizedText     String? @db.Text
+
+  // AI-assisted / citizen-edited fields
+  title       String?
+  summary     String? @db.Text
+  domain      String?
+  subdomain   String?
+  problemType String?
+
+  requiredSkills String[] @default([])
+  tags           String[] @default([])
+
+  affectedPopulation String?
+
+  // Location
+  latitude  Float?
+  longitude Float?
+  address   String?
+  state     String?
+  district  String?
+  block     String?
+  village   String?
+
+  status ChallengeStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  media       ChallengeMedia[]
+  analyses    ChallengeAnalysis[]
+  auditLogs   ChallengeAuditLog[]
+  embeddings  ChallengeEmbedding[]
+  assignments UniversityAssignment[]
+
+  @@index([citizenId])
+  @@index([status])
+}
+
+model ChallengeMedia {
+  id          String    @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  type            MediaType
+  storageKey      String
+  mimeType        String
+  sizeBytes       Int
+  durationSeconds Float?
+  uploadedAt      DateTime  @default(now())
+
+  @@index([challengeId])
+}
+
+model ChallengeAnalysis {
+  id          String    @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  provider     String // e.g. "mock-intelligence"
+  model        String  @default("mock")
+  modelVersion String  @default("1.0")
+  inputRef     String? // optional ref to input stored externally
+
+  // Full AI output preserved as JSON
+  outputJson Json
+
+  confidence Float   @default(0)
+  isFallback Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([challengeId])
+}
+
+model ChallengeAuditLog {
+  id          String    @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  actorId    String
+  actor      User   @relation(fields: [actorId], references: [id])
+  action     String // e.g. CHALLENGE_CREATED, CHALLENGE_SUBMITTED
+  entityType String @default("Challenge")
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([challengeId])
+  @@index([actorId])
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String
+  type     String // e.g. AI_ANALYSIS_COMPLETE, CHALLENGE_SUBMITTED
+  entityId String? // e.g. challengeId
+  status   NotificationStatus @default(UNREAD)
+
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+
+  @@index([userId, status])
+}
+
+// ─── Phase 3 University Capabilities ──────────────────────────────────────────
+
+model Faculty {
+  id           String     @id @default(uuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  name          String
+  department    String?
+  researchAreas String[] @default([])
+  skills        String[] @default([])
+  domains       String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([universityId])
+}
+
+model Facility {
+  id           String     @id @default(uuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  name         String
+  description  String?  @db.Text
+  capabilities String[] @default([])
+  domains      String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([universityId])
+}
+
+model UniversityProject {
+  id           String     @id @default(uuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?  @db.Text
+  domains     String[] @default([])
+  skills      String[] @default([])
+  tags        String[] @default([])
+  year        Int?
+  status      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([universityId])
+}
+
+// ─── Phase 3 Match & Assignment ───────────────────────────────────────────────
+
+model ChallengeEmbedding {
+  id          String    @id @default(uuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  provider  String // e.g. "mock-embedding"
+  model     String                       @default("mock")
+  embedding Unsupported("vector(1536)")? // Adjust dimensions if needed
+  inputHash String?
+
+  createdAt DateTime @default(now())
+
+  @@index([challengeId])
+}
+
+model UniversityAssignment {
+  id           String     @id @default(uuid())
+  challengeId  String
+  challenge    Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  status AssignmentStatus @default(RECOMMENDED)
+
+  matchScore       Float
+  matchBreakdown   Json?
+  matchExplanation String? @db.Text
+  declineReason    String? @db.Text
+
+  recommendedAt DateTime  @default(now())
+  assignedAt    DateTime?
+  viewedAt      DateTime?
+  respondedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([challengeId, universityId])
+  @@index([challengeId])
+  @@index([universityId])
+  @@index([status])
+
+  workspace ResearchWorkspace?
+}
+
+// ─── Phase 4 Collaborative Research Workspace ─────────────────────────────────
+
+enum WorkspaceStatus {
+  ACTIVE
+  PAUSED
+  READY_FOR_SOLUTION
+  COMPLETED
+}
+
+enum TeamRole {
+  FACULTY_LEAD
+  FACULTY
+  RESEARCHER
+  PHD_RESEARCHER
+  STUDENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NoteType {
+  OBSERVATION
+  LITERATURE_REVIEW
+  HYPOTHESIS
+  METHODOLOGY
+  EXPERIMENT
+  ANALYSIS
+  FINDING
+  GENERAL
+}
+
+enum FindingStatus {
+  DRAFT
+  CONFIRMED
+  REJECTED
+}
+
+model ResearchWorkspace {
+  id           String               @id @default(uuid())
+  assignmentId String               @unique
+  assignment   UniversityAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?         @db.Text
+  status      WorkspaceStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team        ResearchTeam?
+  tasks       ResearchTask[]
+  notes       ResearchNote[]
+  evidence    ResearchEvidence[]
+  references  ResearchReference[]
+  findings    ResearchFinding[]
+  discussions ResearchDiscussion[]
+}
+
+model ResearchTeam {
+  id          String            @id @default(uuid())
+  workspaceId String            @unique
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?  @db.Text
+  facultyLeadId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members ResearchTeamMember[]
+}
+
+model ResearchTeamMember {
+  id     String       @id @default(uuid())
+  teamId String
+  team   ResearchTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   TeamRole @default(STUDENT)
+
+  joinedAt DateTime @default(now())
+  isActive Boolean  @default(true)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model ResearchTask {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?      @db.Text
+  assignedTo  String?
+  createdBy   String
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([assignedTo])
+}
+
+model ResearchNote {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  authorId String
+  title    String
+  content  String   @db.Text
+  noteType NoteType @default(GENERAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([authorId])
+}
+
+model ResearchEvidence {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  uploadedBy  String
+  title       String
+  description String? @db.Text
+  type        String  @default("DOCUMENT")
+  storageKey  String
+  mimeType    String
+  fileSize    Int
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+}
+
+model ResearchReference {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  addedBy     String
+  title       String
+  url         String?
+  citation    String? @db.Text
+  description String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+}
+
+model ResearchFinding {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdBy   String
+  title       String
+  description String        @db.Text
+  evidenceIds String[]      @default([])
+  status      FindingStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+}
+
+model ResearchDiscussion {
+  id          String            @id @default(uuid())
+  workspaceId String
+  workspace   ResearchWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  authorId String
+  content  String  @db.Text
+  parentId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([workspaceId])
+}
+

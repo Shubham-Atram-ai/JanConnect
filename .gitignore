@@ -7,3 +7,5 @@ build/
 coverage/
 logs/
 *.log
+
+/generated/prisma

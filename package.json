@@ -1,0 +1,33 @@
+{
+  "name": "janconnect",
+  "version": "1.0.0",
+  "description": "**SIH Problem Statement ID:** SIH26043 **Problem Statement Title:** Multilingual Voice-First Societal Challenge & Innovation Collaboration Platform **Organization:** Government of Jharkhand (Department of Higher & Technical Education) **Theme:** Smart Education **Category:** Software",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "seed": "npx tsx scripts/seed.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^26.6.3",
+    "dotenv": "^18.0.4",
+    "prisma": "^7.10.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@types/pg": "^8.23.1",
+    "bcrypt": "^6.0.0",
+    "pg": "^8.23.0"
+  }
+}
